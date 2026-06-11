@@ -1,0 +1,191 @@
+version: "3.9"
+
+services:
+  # ── Infrastructure ──────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: rabbitmq
+      RABBITMQ_DEFAULT_PASS: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Application Services ────────────────────────────────────────────────────
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      AUTH_SERVICE_URL: http://auth-service:8001
+      PRODUCT_SERVICE_URL: http://product-service:8002
+      ORDER_SERVICE_URL: http://order-service:8003
+      PAYMENT_SERVICE_URL: http://payment-service:8004
+      NOTIFICATION_SERVICE_URL: http://notification-service:8005
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: ${SECRET_KEY:-secret-key-change-in-production}
+      ALGORITHM: HS256
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./api-gateway:/app
+      - ./shared:/app/shared
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/auth_db
+      RABBITMQ_URL: amqp://rabbitmq:rabbitmq@rabbitmq:5672/
+      REDIS_URL: redis://redis:6379/1
+      SECRET_KEY: ${SECRET_KEY:-secret-key-change-in-production}
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      REFRESH_TOKEN_EXPIRE_DAYS: 7
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./auth-service:/app
+      - ./shared:/app/shared
+    command: uvicorn main:app --host 0.0.0.0 --port 8001 --reload
+
+  product-service:
+    build:
+      context: ./product-service
+      dockerfile: Dockerfile
+    ports:
+      - "8002:8002"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/product_db
+      RABBITMQ_URL: amqp://rabbitmq:rabbitmq@rabbitmq:5672/
+      REDIS_URL: redis://redis:6379/2
+      SECRET_KEY: ${SECRET_KEY:-secret-key-change-in-production}
+      ALGORITHM: HS256
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./product-service:/app
+      - ./shared:/app/shared
+    command: uvicorn main:app --host 0.0.0.0 --port 8002 --reload
+
+  order-service:
+    build:
+      context: ./order-service
+      dockerfile: Dockerfile
+    ports:
+      - "8003:8003"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/order_db
+      RABBITMQ_URL: amqp://rabbitmq:rabbitmq@rabbitmq:5672/
+      REDIS_URL: redis://redis:6379/3
+      SECRET_KEY: ${SECRET_KEY:-secret-key-change-in-production}
+      ALGORITHM: HS256
+      PRODUCT_SERVICE_URL: http://product-service:8002
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./order-service:/app
+      - ./shared:/app/shared
+    command: uvicorn main:app --host 0.0.0.0 --port 8003 --reload
+
+  payment-service:
+    build:
+      context: ./payment-service
+      dockerfile: Dockerfile
+    ports:
+      - "8004:8004"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/payment_db
+      RABBITMQ_URL: amqp://rabbitmq:rabbitmq@rabbitmq:5672/
+      SECRET_KEY: ${SECRET_KEY:-secret-key-change-in-production}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_placeholder}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-whsec_placeholder}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./payment-service:/app
+      - ./shared:/app/shared
+    command: uvicorn main:app --host 0.0.0.0 --port 8004 --reload
+
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    ports:
+      - "8005:8005"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/notification_db
+      RABBITMQ_URL: amqp://rabbitmq:rabbitmq@rabbitmq:5672/
+      SMTP_HOST: ${SMTP_HOST:-smtp.example.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-user@example.com}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-password}
+      FROM_EMAIL: ${FROM_EMAIL:-noreply@marketcore.io}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./notification-service:/app
+      - ./shared:/app/shared
+    command: uvicorn main:app --host 0.0.0.0 --port 8005 --reload
+
+volumes:
+  postgres_data:
+  rabbitmq_data:

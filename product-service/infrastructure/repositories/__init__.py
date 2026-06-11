@@ -1,0 +1,4 @@
+from infrastructure.repositories.category_repository_impl import SQLAlchemyCategoryRepository
+from infrastructure.repositories.product_repository_impl import SQLAlchemyProductRepository
+
+__all__ = ["SQLAlchemyProductRepository", "SQLAlchemyCategoryRepository"]
