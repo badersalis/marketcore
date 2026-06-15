@@ -18,6 +18,7 @@ from domain.exceptions.product_exceptions import CategoryNotFoundException, Prod
 from infrastructure.persistence.database import get_db
 from infrastructure.repositories.category_repository_impl import SQLAlchemyCategoryRepository
 from infrastructure.repositories.product_repository_impl import SQLAlchemyProductRepository
+from infrastructure.repositories.sku_repository_impl import SQLAlchemySkuRepository
 
 router = APIRouter()
 
@@ -48,9 +49,10 @@ async def list_products(
 
 @router.get("/{product_id}", response_model=ProductResponse)
 async def get_product(product_id: str, db: AsyncSession = Depends(get_db)):
-    repo = SQLAlchemyProductRepository(db)
+    product_repo = SQLAlchemyProductRepository(db)
+    sku_repo = SQLAlchemySkuRepository(db)
     try:
-        return await GetProductById(repo).execute(product_id)
+        return await GetProductById(product_repo, sku_repo).execute(product_id)
     except ProductNotFoundException as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=exc.message)
 

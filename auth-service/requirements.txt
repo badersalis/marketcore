@@ -12,3 +12,5 @@ redis[asyncio]==5.2.1
 httpx==0.28.1
 email-validator==2.2.0
 python-multipart==0.0.20
+asgi-correlation-id==4.3.3
+prometheus-fastapi-instrumentator==6.1.0

@@ -1,4 +1,6 @@
 from application.dtos.auth_dtos import RegisterRequest, UserResponse
+from application.services.otp_service import OtpService
+from core.config import settings
 from domain.entities.user import User
 from domain.exceptions.auth_exceptions import UserAlreadyExistsException
 from domain.repositories.user_repository import UserRepository
@@ -9,11 +11,15 @@ from shared.events.user_events import UserRegistered
 
 
 class RegisterUser:
-    """Registers a new user account, persists it, and publishes a UserRegistered domain event."""
-
-    def __init__(self, user_repo: UserRepository, event_publisher: EventPublisher) -> None:
+    def __init__(
+        self,
+        user_repo: UserRepository,
+        event_publisher: EventPublisher,
+        otp_service: OtpService,
+    ) -> None:
         self._user_repo = user_repo
         self._event_publisher = event_publisher
+        self._otp_service = otp_service
 
     async def execute(self, request: RegisterRequest) -> UserResponse:
         existing = await self._user_repo.get_by_email(request.email)
@@ -26,7 +32,10 @@ class RegisterUser:
         )
         user = await self._user_repo.save(user)
 
-        event = UserRegistered(user_id=user.id, email=str(user.email))
+        otp = self._otp_service.generate()
+        await self._otp_service.store(user.id, otp, settings.OTP_EXPIRE_MINUTES)
+
+        event = UserRegistered(user_id=user.id, email=str(user.email), otp=otp)
         await self._event_publisher.publish("user.events", event)
 
         return UserResponse(

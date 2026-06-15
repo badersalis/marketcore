@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from application.dtos.auth_dtos import LoginRequest, TokenResponse
 from application.services.token_service import TokenService
@@ -36,7 +36,7 @@ class LoginUser:
         refresh_token = RefreshToken(
             user_id=user.id,
             token=refresh_token_value,
-            expires_at=datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+            expires_at=datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
         )
         await self._token_repo.save(refresh_token)
 

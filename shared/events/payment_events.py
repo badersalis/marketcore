@@ -4,6 +4,29 @@ from shared.base_event import DomainEvent
 
 
 @dataclass
+class PaymentCreated(DomainEvent):
+    payment_id: str = ""
+    order_id: str = ""
+    user_id: str = ""
+    amount: float = 0.0
+    currency: str = "USD"
+    idempotency_key: str = ""
+    event_type: str = field(default="payment.created")
+
+    def to_dict(self) -> Dict[str, Any]:
+        d = super().to_dict()
+        d.update({
+            "payment_id": self.payment_id,
+            "order_id": self.order_id,
+            "user_id": self.user_id,
+            "amount": self.amount,
+            "currency": self.currency,
+            "idempotency_key": self.idempotency_key,
+        })
+        return d
+
+
+@dataclass
 class PaymentConfirmed(DomainEvent):
     payment_id: str = ""
     order_id: str = ""
@@ -43,4 +66,4 @@ class PaymentFailed(DomainEvent):
         return d
 
 
-__all__ = ["PaymentConfirmed", "PaymentFailed"]
+__all__ = ["PaymentCreated", "PaymentConfirmed", "PaymentFailed"]

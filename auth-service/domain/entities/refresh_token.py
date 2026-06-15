@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from shared.base_entity import BaseEntity
@@ -19,7 +19,7 @@ class RefreshToken(BaseEntity):
     def is_expired(self) -> bool:
         if self.expires_at is None:
             return True
-        return datetime.utcnow() > self.expires_at
+        return datetime.now(timezone.utc).replace(tzinfo=None) > self.expires_at
 
 
 __all__ = ["RefreshToken"]

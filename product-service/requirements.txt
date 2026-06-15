@@ -9,3 +9,5 @@ python-jose[cryptography]==3.3.0
 aio-pika==9.4.3
 httpx==0.28.1
 python-multipart==0.0.20
+asgi-correlation-id==4.3.3
+prometheus-fastapi-instrumentator==6.1.0

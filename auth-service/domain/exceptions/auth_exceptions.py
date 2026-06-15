@@ -22,9 +22,21 @@ class InvalidTokenException(DomainException):
         super().__init__(msg, "INVALID_TOKEN")
 
 
+class InvalidOtpException(DomainException):
+    def __init__(self) -> None:
+        super().__init__("Invalid or expired OTP", "INVALID_OTP")
+
+
+class EmailAlreadyVerifiedException(DomainException):
+    def __init__(self) -> None:
+        super().__init__("Email address is already verified", "EMAIL_ALREADY_VERIFIED")
+
+
 __all__ = [
     "UserAlreadyExistsException",
     "UserNotFoundException",
     "InvalidCredentialsException",
     "InvalidTokenException",
+    "InvalidOtpException",
+    "EmailAlreadyVerifiedException",
 ]

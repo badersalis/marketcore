@@ -3,6 +3,7 @@ import logging
 from typing import Optional
 
 import aio_pika
+from asgi_correlation_id import correlation_id as _correlation_id_ctx
 
 from shared.base_event import DomainEvent
 
@@ -36,9 +37,14 @@ class EventPublisher:
                 exchange_name, aio_pika.ExchangeType.FANOUT, durable=True
             )
             body = json.dumps(event.to_dict()).encode()
-            message = aio_pika.Message(body=body, content_type="application/json")
+            corr_id = _correlation_id_ctx.get(None)
+            message = aio_pika.Message(
+                body=body,
+                content_type="application/json",
+                correlation_id=corr_id,
+            )
             await exchange.publish(message, routing_key="")
-            logger.debug("Published %s to %s", event.event_type, exchange_name)
+            logger.debug("Published %s to %s (correlation_id=%s)", event.event_type, exchange_name, corr_id)
         except Exception as exc:
             logger.error("Failed to publish event %s: %s", event.event_type, exc)
 

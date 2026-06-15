@@ -18,4 +18,21 @@ class SlugAlreadyExistsException(DomainException):
         super().__init__(f"Slug '{slug}' already exists", "SLUG_ALREADY_EXISTS")
 
 
-__all__ = ["ProductNotFoundException", "CategoryNotFoundException", "SlugAlreadyExistsException"]
+class SkuNotFoundException(DomainException):
+    def __init__(self, sku_id: str = ""):
+        msg = f"SKU '{sku_id}' not found" if sku_id else "SKU not found"
+        super().__init__(msg, "SKU_NOT_FOUND")
+
+
+class SkuCodeAlreadyExistsException(DomainException):
+    def __init__(self, code: str):
+        super().__init__(f"SKU code '{code}' is already in use", "SKU_CODE_ALREADY_EXISTS")
+
+
+__all__ = [
+    "ProductNotFoundException",
+    "CategoryNotFoundException",
+    "SlugAlreadyExistsException",
+    "SkuNotFoundException",
+    "SkuCodeAlreadyExistsException",
+]
