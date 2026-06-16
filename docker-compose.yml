@@ -117,29 +117,30 @@ services:
       - ./shared:/app/shared
     command: uvicorn main:app --host 0.0.0.0 --port 8002 --reload
 
-  # order-service: not yet implemented — uncomment when the service directory is created
-  # order-service:
-  #   build:
-  #     context: ./order-service
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - "8003:8003"
-  #   environment:
-  #     DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/order_db
-  #     RABBITMQ_URL: amqp://${RABBITMQ_USER:-rabbitmq}:${RABBITMQ_PASS:-rabbitmq}@rabbitmq:5672/
-  #     REDIS_URL: redis://redis:6379/3
-  #     SECRET_KEY: ${SECRET_KEY:-secret-key-change-in-production}
-  #     ALGORITHM: HS256
-  #     PRODUCT_SERVICE_URL: http://product-service:8002
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #     rabbitmq:
-  #       condition: service_healthy
-  #   volumes:
-  #     - ./order-service:/app
-  #     - ./shared:/app/shared
-  #   command: uvicorn main:app --host 0.0.0.0 --port 8003 --reload
+  order-service:
+    build:
+      context: ./order-service
+      dockerfile: Dockerfile
+    ports:
+      - "8003:8003"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/market_order_db
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-rabbitmq}:${RABBITMQ_PASS:-rabbitmq}@rabbitmq:5672/
+      REDIS_URL: redis://redis:6379/3
+      SECRET_KEY: ${SECRET_KEY:-secret-key-change-in-production}
+      ALGORITHM: HS256
+      PRODUCT_SERVICE_URL: http://product-service:8002
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./order-service:/app
+      - ./shared:/app/shared
+    command: uvicorn main:app --host 0.0.0.0 --port 8003 --reload
 
   payment-service:
     build:
