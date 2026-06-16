@@ -68,6 +68,19 @@ services:
   #     - ./shared:/app/shared
   #   command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
+  hyperdx:
+    image: hyperdx/hyperdx-local:latest
+    container_name: marketcore_hyperdx
+    ports:
+      - "8080:8080"
+      - "4318:4318"
+      - "4317:4317"
+    environment:
+      - HYPERDX_API_KEY=marketcore-local-dev
+    volumes:
+      - hyperdx-data:/data
+    restart: unless-stopped
+
   auth-service:
     build:
       context: ./auth-service
@@ -83,6 +96,9 @@ services:
       ACCESS_TOKEN_EXPIRE_MINUTES: 30
       REFRESH_TOKEN_EXPIRE_DAYS: 7
       BASE_URL: ${AUTH_BASE_URL:-http://localhost:8001}
+      OTEL_SERVICE_NAME: auth-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://hyperdx:4318/v1/traces
+      HYPERDX_API_KEY: marketcore-local-dev
     depends_on:
       postgres:
         condition: service_healthy
@@ -107,6 +123,9 @@ services:
       REDIS_URL: redis://redis:6379/2
       SECRET_KEY: ${SECRET_KEY:-secret-key-change-in-production}
       ALGORITHM: HS256
+      OTEL_SERVICE_NAME: product-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://hyperdx:4318/v1/traces
+      HYPERDX_API_KEY: marketcore-local-dev
     depends_on:
       postgres:
         condition: service_healthy
@@ -153,6 +172,9 @@ services:
       SECRET_KEY: ${SECRET_KEY:-secret-key-change-in-production}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_placeholder}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-whsec_placeholder}
+      OTEL_SERVICE_NAME: payment-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://hyperdx:4318/v1/traces
+      HYPERDX_API_KEY: marketcore-local-dev
     depends_on:
       postgres:
         condition: service_healthy
@@ -178,6 +200,9 @@ services:
       ARQ_JOB_TIMEOUT: ${ARQ_JOB_TIMEOUT:-30}
       ARQ_KEEP_RESULT: ${ARQ_KEEP_RESULT:-3600}
       ARQ_MAX_TRIES: ${ARQ_MAX_TRIES:-5}
+      OTEL_SERVICE_NAME: notification-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://hyperdx:4318/v1/traces
+      HYPERDX_API_KEY: marketcore-local-dev
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -218,37 +243,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  prometheus:
-    image: prom/prometheus:v2.53.0
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_data:/prometheus
-    command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
-      - "--storage.tsdb.path=/prometheus"
-      - "--storage.tsdb.retention.time=15d"
-      - "--web.enable-lifecycle"
-    restart: unless-stopped
-
-  grafana:
-    image: grafana/grafana:11.1.0
-    ports:
-      - "3000:3000"
-    environment:
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
-      GF_USERS_ALLOW_SIGN_UP: "false"
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
-    depends_on:
-      - prometheus
-    restart: unless-stopped
-
 volumes:
   postgres_data:
   rabbitmq_data:
-  prometheus_data:
-  grafana_data:
+  hyperdx-data:

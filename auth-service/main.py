@@ -1,11 +1,18 @@
 import logging
+import os
 from contextlib import asynccontextmanager
 
 from asgi_correlation_id import CorrelationIdFilter, CorrelationIdMiddleware
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
-from prometheus_fastapi_instrumentator import Instrumentator
+from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.instrumentation.aio_pika import AioPikaInstrumentor
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 from core.config import settings
 from infrastructure.cache.redis_client import create_redis_client
@@ -19,6 +26,24 @@ logging.basicConfig(
 )
 for _handler in logging.root.handlers:
     _handler.addFilter(CorrelationIdFilter(default_value="-"))
+
+
+def setup_telemetry(app: FastAPI, service_name: str) -> None:
+    provider = TracerProvider()
+    provider.add_span_processor(
+        BatchSpanProcessor(
+            OTLPSpanExporter(
+                endpoint=os.getenv(
+                    "OTEL_EXPORTER_OTLP_ENDPOINT",
+                    "http://hyperdx:4318/v1/traces",
+                )
+            )
+        )
+    )
+    trace.set_tracer_provider(provider)
+    FastAPIInstrumentor.instrument_app(app, server_request_hook=None)
+    SQLAlchemyInstrumentor().instrument()
+    AioPikaInstrumentor().instrument()
 
 
 @asynccontextmanager
@@ -59,7 +84,7 @@ app.add_middleware(
 )
 app.add_middleware(CorrelationIdMiddleware)
 
-Instrumentator().instrument(app).expose(app, include_in_schema=False)
+setup_telemetry(app, os.getenv("OTEL_SERVICE_NAME", "auth-service"))
 
 app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
 
