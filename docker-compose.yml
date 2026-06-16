@@ -44,29 +44,29 @@ services:
       retries: 5
 
   # ── Application Services ────────────────────────────────────────────────────
-  # api-gateway: not yet implemented — uncomment when the service directory is created
-  # api-gateway:
-  #   build:
-  #     context: ./api-gateway
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - "8000:8000"
-  #   environment:
-  #     AUTH_SERVICE_URL: http://auth-service:8001
-  #     PRODUCT_SERVICE_URL: http://product-service:8002
-  #     ORDER_SERVICE_URL: http://order-service:8003
-  #     PAYMENT_SERVICE_URL: http://payment-service:8004
-  #     NOTIFICATION_SERVICE_URL: http://notification-service:8005
-  #     REDIS_URL: redis://redis:6379/0
-  #     SECRET_KEY: ${SECRET_KEY:-secret-key-change-in-production}
-  #     ALGORITHM: HS256
-  #   depends_on:
-  #     redis:
-  #       condition: service_healthy
-  #   volumes:
-  #     - ./api-gateway:/app
-  #     - ./shared:/app/shared
-  #   command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      AUTH_SERVICE_URL: http://auth-service:8001
+      PRODUCT_SERVICE_URL: http://product-service:8002
+      ORDER_SERVICE_URL: http://order-service:8003
+      PAYMENT_SERVICE_URL: http://payment-service:8004
+      NOTIFICATION_SERVICE_URL: http://notification-service:8005
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: ${SECRET_KEY:-secret-key-change-in-production}
+      ALGORITHM: HS256
+      RATE_LIMIT_PUBLIC: 100
+      RATE_LIMIT_AUTHED: 300
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./api-gateway:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
   auth-service:
     build:
