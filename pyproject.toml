@@ -1,0 +1,28 @@
+[tool.commitizen]
+name = "cz_conventional_commits"
+version = "0.1.0"
+tag_format = "v$version"
+update_changelog_on_bump = true
+
+# Enforce that every commit is scoped to a service or concern
+schema_pattern = '^(feat|fix|refactor|perf|test|docs|chore|infra|ci)\((auth|product|payment|notification|shared|infra|docs|chore)\)!?: .{1,72}(\n.*)?$'
+
+[tool.commitizen.customize]
+schema = """
+<type>(<scope>): <subject>
+
+[optional body]
+"""
+example = "feat(auth): add JWT refresh token rotation"
+info = """
+Scopes map to services / concerns in this monorepo:
+
+  auth          → auth-service/
+  product       → product-service/
+  payment       → payment-service/
+  notification  → notification-service/
+  shared        → shared/
+  infra         → docker-compose, monitoring/, scripts/
+  docs          → README.md, docs/
+  chore         → deps, tooling, CI config
+"""
