@@ -26,6 +26,8 @@ Most e-commerce starters are either too simple (a single Django monolith) or too
 
 ## Architecture
 
+![MarketCore Architecture](https://drive.google.com/uc?export=view&id=1viJb11rRirg-ci64l32eNwbjBzGyu5Vt)
+
 ```
                     ┌─────────────────────────────────────────────┐
                     │              API Gateway  :8000              │
