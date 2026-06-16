@@ -18,6 +18,7 @@ from application.use_cases.login_user import LoginUser
 from application.use_cases.logout_user import LogoutUser
 from application.use_cases.refresh_access_token import RefreshAccessToken
 from application.use_cases.register_user import RegisterUser
+from application.use_cases.request_merchant_upgrade import RequestMerchantUpgrade
 from application.use_cases.send_verification_email import SendVerificationEmail
 from application.use_cases.verify_email import VerifyEmail
 from domain.exceptions.auth_exceptions import (
@@ -26,13 +27,16 @@ from domain.exceptions.auth_exceptions import (
     InvalidOtpException,
     InvalidTokenException,
     UserAlreadyExistsException,
+    UserNotFoundException,
 )
+from domain.value_objects.role import UserRole
 from infrastructure.messaging.event_publisher import EventPublisher
 from infrastructure.persistence.database import get_db
 from infrastructure.repositories.refresh_token_repository_impl import (
     SQLAlchemyRefreshTokenRepository,
 )
 from infrastructure.repositories.user_repository_impl import SQLAlchemyUserRepository
+from presentation.dependencies.permissions import require_member
 
 router = APIRouter()
 _security = HTTPBearer()
@@ -125,6 +129,8 @@ async def get_current_user(
         email=str(user.email),
         is_active=user.is_active,
         is_verified=user.is_verified,
+        role=user.role,
+        is_merchant_approved=user.is_merchant_approved,
         created_at=user.created_at,
     )
 
@@ -180,6 +186,28 @@ async def verify_email(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=exc.message)
     except EmailAlreadyVerifiedException as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=exc.message)
+
+
+@router.post(
+    "/merchant-upgrade",
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Request upgrade from member to merchant role",
+)
+async def request_merchant_upgrade(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    publisher: EventPublisher = Depends(_publisher),
+    current_user: dict = Depends(require_member),
+) -> dict:
+    use_case = RequestMerchantUpgrade(
+        user_repo=SQLAlchemyUserRepository(db),
+        event_publisher=publisher,
+        session=db,
+    )
+    try:
+        return await use_case.execute(current_user["sub"])
+    except UserNotFoundException as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=exc.message)
 
 
 __all__ = ["router"]

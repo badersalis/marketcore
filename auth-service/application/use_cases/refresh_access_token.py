@@ -27,7 +27,11 @@ class RefreshAccessToken:
         if not user or not user.is_active:
             raise InvalidTokenException("user not found or inactive")
 
-        new_access_token = self._token_service.create_access_token(user.id)
+        new_access_token = self._token_service.create_access_token(
+            user_id=user.id,
+            email=str(user.email),
+            role=user.role,
+        )
         return TokenResponse(access_token=new_access_token, refresh_token=request.refresh_token)
 
 

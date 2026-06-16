@@ -30,7 +30,11 @@ class LoginUser:
         if not user.hashed_password.verify(request.password):
             raise InvalidCredentialsException()
 
-        access_token = self._token_service.create_access_token(user.id)
+        access_token = self._token_service.create_access_token(
+            user_id=user.id,
+            email=str(user.email),
+            role=user.role,
+        )
         refresh_token_value = self._token_service.create_refresh_token_value()
 
         refresh_token = RefreshToken(

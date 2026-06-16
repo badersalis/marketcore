@@ -16,6 +16,8 @@ _HANDLED_EVENTS = {
     "user.registered",
     "user.verified",
     "user.verification_email_requested",
+    "user.merchant_upgrade_requested",
+    "user.merchant_approved",
     "payment.confirmed",
     "payment.failed",
 }
@@ -98,6 +100,19 @@ class NotificationConsumer:
                 logger.warning("Missing email in user.verified — skipping")
                 return
             await self._arq.enqueue_job("send_welcome_email_job", to=email, **kw)
+
+        elif event_type == "user.merchant_upgrade_requested":
+            logger.info(
+                "MerchantUpgradeRequested for user=%s request=%s — operator notification not yet wired",
+                body.get("user_id"), body.get("request_id"),
+            )
+
+        elif event_type == "user.merchant_approved":
+            email = body.get("email", "")
+            if not email:
+                logger.warning("Missing email in user.merchant_approved — skipping")
+                return
+            await self._arq.enqueue_job("send_merchant_approved_email_job", to=email, **kw)
 
         elif event_type == "payment.confirmed":
             logger.info(
