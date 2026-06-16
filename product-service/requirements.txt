@@ -10,4 +10,9 @@ aio-pika==9.4.3
 httpx==0.28.1
 python-multipart==0.0.20
 asgi-correlation-id==4.3.3
-prometheus-fastapi-instrumentator==6.1.0
+opentelemetry-api==1.27.0
+opentelemetry-sdk==1.27.0
+opentelemetry-instrumentation-fastapi==0.48b0
+opentelemetry-instrumentation-sqlalchemy==0.48b0
+opentelemetry-instrumentation-aio-pika==0.48b0
+opentelemetry-exporter-otlp-proto-http==1.27.0
