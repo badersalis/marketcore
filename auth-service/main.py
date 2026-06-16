@@ -18,6 +18,7 @@ from core.config import settings
 from infrastructure.cache.redis_client import create_redis_client
 from infrastructure.messaging.event_publisher import EventPublisher
 from infrastructure.persistence.database import Base, engine
+from presentation.routers.admin_router import router as admin_router
 from presentation.routers.auth_router import router as auth_router
 
 logging.basicConfig(
@@ -87,6 +88,7 @@ app.add_middleware(CorrelationIdMiddleware)
 setup_telemetry(app, os.getenv("OTEL_SERVICE_NAME", "auth-service"))
 
 app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
+app.include_router(admin_router, prefix="/admin", tags=["Admin"])
 
 
 @app.get("/health", tags=["Health"])

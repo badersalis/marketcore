@@ -2,6 +2,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, EmailStr, Field
 
+from domain.value_objects.role import UserRole
+
 
 class RegisterRequest(BaseModel):
     email: EmailStr
@@ -28,6 +30,8 @@ class UserResponse(BaseModel):
     email: str
     is_active: bool
     is_verified: bool
+    role: UserRole
+    is_merchant_approved: bool
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -42,6 +46,11 @@ class VerifyOtpRequest(BaseModel):
     otp: str = Field(..., min_length=6, max_length=6, pattern=r"^\d{6}$")
 
 
+class AssignRoleRequest(BaseModel):
+    user_id: str
+    role: UserRole
+
+
 __all__ = [
     "RegisterRequest",
     "LoginRequest",
@@ -50,4 +59,5 @@ __all__ = [
     "UserResponse",
     "SendVerificationRequest",
     "VerifyOtpRequest",
+    "AssignRoleRequest",
 ]

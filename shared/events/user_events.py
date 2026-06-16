@@ -54,4 +54,44 @@ class UserVerified(DomainEvent):
         return d
 
 
-__all__ = ["UserRegistered", "UserVerified", "VerificationEmailRequested"]
+@dataclass
+class MerchantUpgradeRequested(DomainEvent):
+    """Published when a member requests upgrade to merchant role."""
+    user_id: str = ""
+    email: str = ""
+    request_id: str = ""
+    event_type: str = field(default="user.merchant_upgrade_requested")
+
+    def to_dict(self) -> Dict[str, Any]:
+        d = super().to_dict()
+        d.update({
+            "user_id": self.user_id,
+            "email": self.email,
+            "request_id": self.request_id,
+        })
+        return d
+
+
+@dataclass
+class MerchantApproved(DomainEvent):
+    """Published when an operator approves a merchant upgrade request."""
+    user_id: str = ""
+    email: str = ""
+    event_type: str = field(default="user.merchant_approved")
+
+    def to_dict(self) -> Dict[str, Any]:
+        d = super().to_dict()
+        d.update({
+            "user_id": self.user_id,
+            "email": self.email,
+        })
+        return d
+
+
+__all__ = [
+    "UserRegistered",
+    "UserVerified",
+    "VerificationEmailRequested",
+    "MerchantUpgradeRequested",
+    "MerchantApproved",
+]

@@ -44,6 +44,8 @@ class VerifyEmail:
             email=str(user.email),
             is_active=user.is_active,
             is_verified=user.is_verified,
+            role=user.role,
+            is_merchant_approved=user.is_merchant_approved,
             created_at=user.created_at,
         )
 
