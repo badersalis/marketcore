@@ -188,6 +188,32 @@ services:
       - ./shared:/app/shared
     command: uvicorn main:app --host 0.0.0.0 --port 8005 --reload
 
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+    ports:
+      - "8006:8006"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/market_user_db
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-rabbitmq}:${RABBITMQ_PASS:-rabbitmq}@rabbitmq:5672/
+      SECRET_KEY: ${SECRET_KEY:-secret-key-change-in-production}
+      ALGORITHM: HS256
+      PERSONA_API_KEY: ${PERSONA_API_KEY:-persona_sandbox_placeholder}
+      PERSONA_INQUIRY_TYPE_ID: ${PERSONA_INQUIRY_TYPE_ID:-itmpl_placeholder}
+      PERSONA_WEBHOOK_SECRET: ${PERSONA_WEBHOOK_SECRET:-whsec_placeholder}
+      OTEL_SERVICE_NAME: user-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://hyperdx:4318/v1/traces
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./user-service:/app
+      - ./shared:/app/shared
+    command: uvicorn main:app --host 0.0.0.0 --port 8006 --reload
+
   notification-worker:
     build:
       context: ./notification-service
