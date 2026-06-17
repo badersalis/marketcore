@@ -32,6 +32,8 @@ PUBLIC_ROUTES = {
     ("POST", "/auth/login"),
     ("POST", "/auth/refresh"),
     ("GET", "/health"),
+    ("GET", "/docs"),
+    ("GET", "/openapi.json"),
 }
 
 
