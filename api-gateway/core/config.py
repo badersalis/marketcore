@@ -34,6 +34,7 @@ PUBLIC_ROUTES = {
     ("GET", "/health"),
     ("GET", "/docs"),
     ("GET", "/openapi.json"),
+    ("GET", "/favicon.ico"),
 }
 
 
