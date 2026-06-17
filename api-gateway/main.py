@@ -95,15 +95,6 @@ async def health():
     return {"status": overall, "services": services}
 
 
-@app.api_route(
-    "/{full_path:path}",
-    methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],
-    include_in_schema=False,
-)
-async def catch_all(request: Request):
-    return await reverse_proxy(request)
-
-
 @app.get("/docs", include_in_schema=False, response_class=HTMLResponse)
 async def scalar_docs():
     return HTMLResponse(
@@ -124,3 +115,12 @@ async def scalar_docs():
   </body>
 </html>"""
     )
+
+
+@app.api_route(
+    "/{full_path:path}",
+    methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],
+    include_in_schema=False,
+)
+async def catch_all(request: Request):
+    return await reverse_proxy(request)
