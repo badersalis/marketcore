@@ -72,7 +72,7 @@ services:
     image: hyperdx/hyperdx-local:latest
     container_name: marketcore_hyperdx
     ports:
-      - "8080:8080"
+      - "9000:8080"
       - "4318:4318"
       - "4317:4317"
     environment:
