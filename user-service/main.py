@@ -6,14 +6,8 @@ from asgi_correlation_id import CorrelationIdFilter, CorrelationIdMiddleware
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
-from opentelemetry import trace
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
-
 from core.config import settings
+from shared.telemetry import setup_telemetry
 from infrastructure.clients.persona_client import PersonaClient
 from infrastructure.messaging.event_publisher import EventPublisher
 from infrastructure.messaging.kyc_consumer import KYCWebhookConsumer
@@ -28,19 +22,6 @@ logging.basicConfig(
 for _handler in logging.root.handlers:
     _handler.addFilter(CorrelationIdFilter(default_value="-"))
 
-
-def setup_telemetry(app: FastAPI, service_name: str) -> None:
-    provider = TracerProvider()
-    provider.add_span_processor(
-        BatchSpanProcessor(
-            OTLPSpanExporter(
-                endpoint=settings.OTEL_EXPORTER_OTLP_ENDPOINT,
-            )
-        )
-    )
-    trace.set_tracer_provider(provider)
-    FastAPIInstrumentor.instrument_app(app, server_request_hook=None)
-    SQLAlchemyInstrumentor().instrument()
 
 
 @asynccontextmanager
@@ -91,7 +72,11 @@ app = FastAPI(
     redoc_url=None,
 )
 
-setup_telemetry(app, settings.OTEL_SERVICE_NAME)
+setup_telemetry(
+    app,
+    settings.OTEL_EXPORTER_OTLP_ENDPOINT,
+    instrument_sqlalchemy=True,
+)
 
 app.add_middleware(
     CORSMiddleware,
