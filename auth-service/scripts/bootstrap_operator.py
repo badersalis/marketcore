@@ -6,7 +6,7 @@ Intended for bootstrapping the first operator on a fresh environment —
 there is no API path to create the first operator (chicken-and-egg).
 
 Usage:
-    python scripts/bootstrap_operator.py <email>
+    python auth-service/scripts/bootstrap_operator.py <email>
 
 Environment:
     DATABASE_URL  PostgreSQL DSN for market_auth_db.
@@ -14,9 +14,9 @@ Environment:
                   asyncpg-style prefix (postgresql+asyncpg://) is accepted.
 
 Examples:
-    python scripts/bootstrap_operator.py admin@example.com
-    DATABASE_URL=postgresql://postgres:postgres@localhost:5432/market_auth_db \\
-        python scripts/bootstrap_operator.py admin@example.com
+    python auth-service/scripts/bootstrap_operator.py admin@example.com
+    DATABASE_URL=postgresql://postgres:postgres@localhost:5432/market_auth_db \
+        python auth-service/scripts/bootstrap_operator.py admin@example.com
 """
 
 import argparse
