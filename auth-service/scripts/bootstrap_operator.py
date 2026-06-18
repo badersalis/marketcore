@@ -28,7 +28,7 @@ from pathlib import Path
 import asyncpg
 from dotenv import load_dotenv
 
-load_dotenv(Path(__file__).resolve().parents[2] / ".env")
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 _DEFAULT_DB = "postgresql://postgres:postgres@localhost:5432/market_auth_db"
 
