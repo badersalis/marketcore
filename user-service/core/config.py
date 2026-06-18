@@ -9,8 +9,10 @@ class Settings(BaseSettings):
     PERSONA_API_KEY: str = "persona_sandbox_placeholder"
     PERSONA_INQUIRY_TYPE_ID: str = "itmpl_placeholder"
     PERSONA_WEBHOOK_SECRET: str = "whsec_placeholder"
+    OTEL_SERVICE_NAME: str = "user-service"
+    OTEL_EXPORTER_OTLP_ENDPOINT: str = "http://localhost:4318/v1/traces"
 
-    model_config = {"env_file": ".env"}
+    model_config = {"env_file": ".env", "extra": "ignore"}
 
 
 settings = Settings()

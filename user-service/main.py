@@ -34,10 +34,7 @@ def setup_telemetry(app: FastAPI, service_name: str) -> None:
     provider.add_span_processor(
         BatchSpanProcessor(
             OTLPSpanExporter(
-                endpoint=os.getenv(
-                    "OTEL_EXPORTER_OTLP_ENDPOINT",
-                    "http://hyperdx:4318/v1/traces",
-                )
+                endpoint=settings.OTEL_EXPORTER_OTLP_ENDPOINT,
             )
         )
     )
@@ -94,7 +91,7 @@ app = FastAPI(
     redoc_url=None,
 )
 
-setup_telemetry(app, os.getenv("OTEL_SERVICE_NAME", "user-service"))
+setup_telemetry(app, settings.OTEL_SERVICE_NAME)
 
 app.add_middleware(
     CORSMiddleware,
