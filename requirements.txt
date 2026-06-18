@@ -1,4 +1,0 @@
-# Root-level dependencies for scripts and dev tooling.
-# Service-specific dependencies live in <service>/requirements.txt.
-
-asyncpg==0.30.0
