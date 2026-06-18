@@ -23,9 +23,12 @@ import argparse
 import asyncio
 import os
 import sys
+from pathlib import Path
 
 import asyncpg
+from dotenv import load_dotenv
 
+load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
 _DEFAULT_DB = "postgresql://postgres:postgres@localhost:5432/market_auth_db"
 

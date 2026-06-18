@@ -12,6 +12,7 @@ aio-pika==9.4.3
 redis[asyncio]==5.2.1
 httpx==0.28.1
 email-validator==2.2.0
+python-dotenv==1.0.1
 python-multipart==0.0.20
 asgi-correlation-id==4.3.3
 opentelemetry-api==1.27.0
