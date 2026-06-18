@@ -14,6 +14,7 @@ from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
+from core.config import settings
 from infrastructure.persistence.database import Base, engine
 from presentation.routers.category_router import router as category_router
 from presentation.routers.product_router import router as product_router
@@ -32,10 +33,7 @@ def setup_telemetry(app: FastAPI, service_name: str) -> None:
     provider.add_span_processor(
         BatchSpanProcessor(
             OTLPSpanExporter(
-                endpoint=os.getenv(
-                    "OTEL_EXPORTER_OTLP_ENDPOINT",
-                    "http://hyperdx:4318/v1/traces",
-                )
+                endpoint=settings.OTEL_EXPORTER_OTLP_ENDPOINT,
             )
         )
     )
@@ -70,7 +68,7 @@ app.add_middleware(
 )
 app.add_middleware(CorrelationIdMiddleware)
 
-setup_telemetry(app, os.getenv("OTEL_SERVICE_NAME", "product-service"))
+setup_telemetry(app, settings.OTEL_SERVICE_NAME)
 
 app.include_router(category_router, prefix="/categories", tags=["Categories"])
 app.include_router(product_router, prefix="/products", tags=["Products"])
