@@ -5,9 +5,8 @@ from asgi_correlation_id import CorrelationIdFilter, CorrelationIdMiddleware
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
-from prometheus_fastapi_instrumentator import Instrumentator
-
 from core.config import settings
+from shared.telemetry import setup_telemetry
 from infrastructure.cache.redis_client import create_redis_client
 from infrastructure.messaging.event_publisher import EventPublisher
 from infrastructure.messaging.payment_consumer import PaymentEventConsumer
@@ -119,7 +118,13 @@ app.add_middleware(
 )
 app.add_middleware(CorrelationIdMiddleware)
 
-Instrumentator().instrument(app).expose(app, include_in_schema=False)
+setup_telemetry(
+    app,
+    settings.OTEL_EXPORTER_OTLP_ENDPOINT,
+    settings.OTEL_SERVICE_NAME,
+    instrument_sqlalchemy=True,
+    instrument_aio_pika=True,
+)
 
 app.include_router(cart_router, prefix="/cart/items", tags=["Cart"])
 app.include_router(order_router, prefix="/orders", tags=["Orders"])
