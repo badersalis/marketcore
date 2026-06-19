@@ -62,11 +62,14 @@ services:
       ALGORITHM: HS256
       RATE_LIMIT_PUBLIC: 100
       RATE_LIMIT_AUTHED: 300
+      OTEL_SERVICE_NAME: api-gateway
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://hyperdx:4318/v1/traces
     depends_on:
       redis:
         condition: service_healthy
     volumes:
       - ./api-gateway:/app
+      - ./shared:/app/shared
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
   hyperdx:
@@ -150,6 +153,8 @@ services:
       SECRET_KEY: ${SECRET_KEY:-secret-key-change-in-production}
       ALGORITHM: HS256
       PRODUCT_SERVICE_URL: http://product-service:8002
+      OTEL_SERVICE_NAME: order-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://hyperdx:4318/v1/traces
     depends_on:
       postgres:
         condition: service_healthy
