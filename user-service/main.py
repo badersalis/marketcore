@@ -75,6 +75,7 @@ app = FastAPI(
 setup_telemetry(
     app,
     settings.OTEL_EXPORTER_OTLP_ENDPOINT,
+    settings.OTEL_SERVICE_NAME,
     instrument_sqlalchemy=True,
 )
 
