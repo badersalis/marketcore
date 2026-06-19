@@ -31,7 +31,7 @@ async def send_verification_email_job(
         )
     except Exception as exc:
         if ctx["job_try"] < settings.ARQ_MAX_TRIES:
-            raise  # ARQ catches this and schedules a retry
+            raise
         logger.error("Giving up on verification email to %s after %d tries: %s", to, settings.ARQ_MAX_TRIES, exc)
 
 

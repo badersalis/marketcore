@@ -241,9 +241,9 @@ services:
       - ./shared:/app/shared
     command: uvicorn main:app --host 0.0.0.0 --port 8006 --reload
 
-  notification-worker:
+  worker:
     build:
-      context: ./notification-service
+      context: ./worker
       dockerfile: Dockerfile
     environment:
       REDIS_URL: redis://:${REDIS_PASSWORD:-MarketC0re_R3dis_2026}@redis:6379/4
@@ -253,13 +253,14 @@ services:
       ARQ_JOB_TIMEOUT: ${ARQ_JOB_TIMEOUT:-30}
       ARQ_KEEP_RESULT: ${ARQ_KEEP_RESULT:-3600}
       ARQ_MAX_TRIES: ${ARQ_MAX_TRIES:-5}
+      OTEL_SERVICE_NAME: worker
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://hyperdx:4318/v1/traces
     depends_on:
       redis:
         condition: service_healthy
     volumes:
-      - ./notification-service:/app
+      - ./worker:/app
       - ./shared:/app/shared
-    command: arq worker.WorkerSettings
     restart: unless-stopped
 
   redisinsight:

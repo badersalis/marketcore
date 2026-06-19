@@ -11,6 +11,7 @@ from infrastructure.jobs.email_jobs import (
     send_verification_email_job,
     send_welcome_email_job,
 )
+from shared.telemetry import setup_worker_telemetry
 
 logging.basicConfig(
     level=logging.INFO,
@@ -19,14 +20,16 @@ logging.basicConfig(
 for _handler in logging.root.handlers:
     _handler.addFilter(CorrelationIdFilter(default_value="-"))
 
+setup_worker_telemetry(settings.OTEL_EXPORTER_OTLP_ENDPOINT, settings.OTEL_SERVICE_NAME)
+
 
 async def startup(ctx: dict) -> None:
     ctx["email_sender"] = ResendEmailSender()
-    logging.getLogger(__name__).info("ARQ email worker started")
+    logging.getLogger(__name__).info("Worker started")
 
 
 async def shutdown(ctx: dict) -> None:
-    logging.getLogger(__name__).info("ARQ email worker stopped")
+    logging.getLogger(__name__).info("Worker stopped")
 
 
 class WorkerSettings:
