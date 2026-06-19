@@ -7,6 +7,7 @@ from opentelemetry.exporter.otlp.proto.http._log_exporter import OTLPLogExporter
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
 from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
+from opentelemetry.sdk.resources import Resource, SERVICE_NAME
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
@@ -14,6 +15,7 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 def setup_telemetry(
     app: FastAPI,
     trace_endpoint: str,
+    service_name: str,
     *,
     instrument_sqlalchemy: bool = False,
     instrument_aio_pika: bool = False,
@@ -23,8 +25,10 @@ def setup_telemetry(
     Derives the log endpoint from trace_endpoint by replacing /v1/traces
     with /v1/logs so both ship to the same collector (HyperDX).
     """
+    resource = Resource.create({SERVICE_NAME: service_name})
+
     # ── Traces ────────────────────────────────────────────────────────────────
-    tracer_provider = TracerProvider()
+    tracer_provider = TracerProvider(resource=resource)
     tracer_provider.add_span_processor(
         BatchSpanProcessor(OTLPSpanExporter(endpoint=trace_endpoint))
     )
@@ -32,7 +36,7 @@ def setup_telemetry(
 
     # ── Logs ──────────────────────────────────────────────────────────────────
     log_endpoint = trace_endpoint.replace("/v1/traces", "/v1/logs")
-    logger_provider = LoggerProvider()
+    logger_provider = LoggerProvider(resource=resource)
     logger_provider.add_log_record_processor(
         BatchLogRecordProcessor(OTLPLogExporter(endpoint=log_endpoint))
     )
