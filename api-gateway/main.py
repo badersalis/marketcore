@@ -8,12 +8,11 @@ from asgi_correlation_id import CorrelationIdFilter, CorrelationIdMiddleware
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
-from prometheus_fastapi_instrumentator import Instrumentator
-
 from core.config import settings
 from middleware.jwt_validator import JWTValidationMiddleware
 from middleware.rate_limiter import RateLimitMiddleware
 from proxy import reverse_proxy
+from shared.telemetry import setup_telemetry
 
 logging.basicConfig(
     level=logging.INFO,
@@ -52,7 +51,7 @@ app.add_middleware(
 app.add_middleware(JWTValidationMiddleware)
 app.add_middleware(CorrelationIdMiddleware)
 
-Instrumentator().instrument(app).expose(app, include_in_schema=False)
+setup_telemetry(app, settings.OTEL_EXPORTER_OTLP_ENDPOINT, settings.OTEL_SERVICE_NAME)
 
 
 @app.middleware("http")
