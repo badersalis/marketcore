@@ -10,6 +10,7 @@ from infrastructure.image.storage import LocalStorageClient
 from infrastructure.jobs.email_jobs import (
     send_payment_confirmed_email_job,
     send_payment_failed_email_job,
+    send_product_published_email_job,
     send_verification_email_job,
     send_welcome_email_job,
 )
@@ -62,6 +63,7 @@ class WorkerSettings:
         send_welcome_email_job,
         send_payment_confirmed_email_job,
         send_payment_failed_email_job,
+        send_product_published_email_job,
         process_product_images_job,
     ]
     on_startup = startup
