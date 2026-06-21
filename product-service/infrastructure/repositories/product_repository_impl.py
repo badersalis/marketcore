@@ -15,6 +15,7 @@ class SQLAlchemyProductRepository(ProductRepository):
         self._session = session
 
     def _to_entity(self, model: ProductModel) -> Product:
+        from domain.entities.product import ProductStatus
         return Product(
             id=model.id,
             name=model.name,
@@ -23,6 +24,8 @@ class SQLAlchemyProductRepository(ProductRepository):
             stock=model.stock,
             category_id=model.category_id,
             is_active=model.is_active,
+            status=ProductStatus(model.status) if isinstance(model.status, str) else model.status,
+            image_urls=model.image_urls or [],
             created_at=model.created_at,
         )
 
@@ -68,6 +71,8 @@ class SQLAlchemyProductRepository(ProductRepository):
             stock=product.stock,
             category_id=product.category_id,
             is_active=product.is_active,
+            status=product.status,
+            image_urls=product.image_urls,
             created_at=product.created_at,
         )
         self._session.add(model)
@@ -86,6 +91,8 @@ class SQLAlchemyProductRepository(ProductRepository):
         model.stock = product.stock
         model.category_id = product.category_id
         model.is_active = product.is_active
+        model.status = product.status
+        model.image_urls = product.image_urls
         await self._session.flush()
         return product
 

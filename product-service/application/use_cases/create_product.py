@@ -27,6 +27,7 @@ class CreateProduct:
             price=Money(amount=Decimal(str(request.price)), currency=request.currency),
             stock=request.stock,
             category_id=request.category_id,
+            image_urls=list(request.image_urls),
         )
         product = await self._product_repo.save(product)
         return _to_response(product)
@@ -43,6 +44,8 @@ def _to_response(p: Product) -> ProductResponse:
         stock=p.stock,
         category_id=p.category_id,
         is_active=p.is_active,
+        status=p.status.value,
+        image_urls=p.image_urls,
         created_at=p.created_at,
     )
 

@@ -1,9 +1,10 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, JSON, Numeric, String, Text
+from sqlalchemy import Boolean, Column, DateTime, Enum as SAEnum, ForeignKey, Integer, JSON, Numeric, String, Text
 from sqlalchemy.orm import relationship
 
+from domain.entities.product import ProductStatus
 from infrastructure.persistence.database import Base
 
 
@@ -28,6 +29,12 @@ class ProductModel(Base):
     stock = Column(Integer, default=0, nullable=False)
     category_id = Column(String, ForeignKey("categories.id", ondelete="SET NULL"), nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
+    status = Column(
+        SAEnum(ProductStatus, values_callable=lambda e: [v.value for v in e]),
+        nullable=False,
+        default=ProductStatus.PROCESSING,
+    )
+    image_urls = Column(JSON, nullable=False, default=list)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False)
 
     category = relationship("CategoryModel", back_populates="products", lazy="select")
