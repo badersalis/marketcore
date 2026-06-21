@@ -27,9 +27,15 @@ def _init_providers(trace_endpoint: str, service_name: str) -> None:
         BatchLogRecordProcessor(OTLPLogExporter(endpoint=log_endpoint))
     )
     set_logger_provider(logger_provider)
-    logging.getLogger().addHandler(
-        LoggingHandler(level=logging.NOTSET, logger_provider=logger_provider)
-    )
+
+    root = logging.getLogger()
+    root.setLevel(logging.INFO)
+    root.addHandler(LoggingHandler(level=logging.NOTSET, logger_provider=logger_provider))
+
+    # Uvicorn overrides propagation on its own loggers in some configurations;
+    # force them back so all access/error logs reach the OTEL handler on root.
+    for _name in ("uvicorn", "uvicorn.access", "uvicorn.error"):
+        logging.getLogger(_name).propagate = True
 
 
 def setup_telemetry(
