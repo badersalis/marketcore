@@ -252,8 +252,10 @@ services:
       dockerfile: Dockerfile
     environment:
       REDIS_URL: redis://:${REDIS_PASSWORD:-MarketC0re_R3dis_2026}@redis:6379/4
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-rabbitmq}:${RABBITMQ_PASS:-rabbitmq}@rabbitmq:5672/
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_FROM: ${EMAIL_FROM:-Marketcore <onboarding@resend.dev>}
+      IMAGE_STORAGE_DIR: /tmp/marketcore-images
       ARQ_MAX_JOBS: ${ARQ_MAX_JOBS:-10}
       ARQ_JOB_TIMEOUT: ${ARQ_JOB_TIMEOUT:-30}
       ARQ_KEEP_RESULT: ${ARQ_KEEP_RESULT:-3600}
@@ -262,6 +264,8 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://hyperdx:4318/v1/traces
     depends_on:
       redis:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     volumes:
       - ./worker:/app
