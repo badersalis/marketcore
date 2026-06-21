@@ -23,4 +23,4 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             raise
 
 
-__all__ = ["engine", "Base", "get_db"]
+__all__ = ["engine", "Base", "AsyncSessionFactory", "get_db"]

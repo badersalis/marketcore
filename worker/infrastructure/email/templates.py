@@ -188,4 +188,55 @@ def payment_failed_email(order_id: str, reason: str) -> str:
 </html>"""
 
 
-__all__ = ["verification_email", "welcome_email", "payment_confirmed_email", "payment_failed_email"]
+def product_published_email(product_name: str, product_id: str) -> str:
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8" /><title>Your product is live</title></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:Inter,Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+    <tr>
+      <td align="center" style="padding:48px 16px;">
+        <table width="560" cellpadding="0" cellspacing="0" role="presentation"
+               style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08);">
+          <tr>
+            <td style="background:#6d28d9;padding:32px 40px;">
+              <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;letter-spacing:-.3px;">
+                Marketcore
+              </h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:40px;">
+              <h2 style="margin:0 0 16px;color:#111827;font-size:20px;font-weight:600;">
+                Your product is live!
+              </h2>
+              <p style="margin:0 0 24px;color:#6b7280;font-size:15px;line-height:1.6;">
+                <strong>{product_name}</strong> has been processed and is now visible to buyers on Marketcore.
+              </p>
+              <a href="https://marketcore.io/products/{product_id}"
+                 style="display:inline-block;padding:14px 28px;background:#6d28d9;color:#ffffff;
+                        text-decoration:none;border-radius:6px;font-size:15px;font-weight:600;">
+                View your listing
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:24px 40px;border-top:1px solid #f3f4f6;">
+              <p style="margin:0;color:#d1d5db;font-size:12px;">&copy; 2026 Marketcore. All rights reserved.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>"""
+
+
+__all__ = [
+    "verification_email",
+    "welcome_email",
+    "payment_confirmed_email",
+    "payment_failed_email",
+    "product_published_email",
+]

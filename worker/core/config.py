@@ -5,8 +5,10 @@ ARQ_QUEUE_NAME = "marketcore:email"
 
 class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/4"
+    RABBITMQ_URL: str = "amqp://rabbitmq:rabbitmq@localhost:5672/"
     RESEND_API_KEY: str = ""
     EMAIL_FROM: str = "Marketcore <onboarding@resend.dev>"
+    IMAGE_STORAGE_DIR: str = "/tmp/marketcore-images"
 
     ARQ_MAX_JOBS: int = 10
     ARQ_JOB_TIMEOUT: int = 30
