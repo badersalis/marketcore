@@ -18,9 +18,8 @@ from presentation.routers.profile_router import router as profile_router
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)-8s [%(correlation_id)s] %(name)s — %(message)s",
+    force=True,
 )
-for _handler in logging.root.handlers:
-    _handler.addFilter(CorrelationIdFilter(default_value="-"))
 
 
 
@@ -72,13 +71,6 @@ app = FastAPI(
     redoc_url=None,
 )
 
-setup_telemetry(
-    app,
-    settings.OTEL_EXPORTER_OTLP_ENDPOINT,
-    settings.OTEL_SERVICE_NAME,
-    instrument_sqlalchemy=True,
-)
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -86,6 +78,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.add_middleware(CorrelationIdMiddleware)
+
+setup_telemetry(
+    app,
+    settings.OTEL_EXPORTER_OTLP_ENDPOINT,
+    settings.OTEL_SERVICE_NAME,
+    instrument_sqlalchemy=True,
+)
+for _handler in logging.root.handlers:
+    _handler.addFilter(CorrelationIdFilter(default_value="-"))
 
 app.include_router(profile_router, prefix="/profile", tags=["Profile"])
 app.include_router(kyc_router, prefix="/kyc", tags=["KYC"])

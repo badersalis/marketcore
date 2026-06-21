@@ -17,9 +17,8 @@ from shared.telemetry import setup_telemetry
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)-8s [%(correlation_id)s] %(name)s — %(message)s",
+    force=True,
 )
-for _handler in logging.root.handlers:
-    _handler.addFilter(CorrelationIdFilter(default_value="-"))
 
 
 @asynccontextmanager
@@ -52,6 +51,8 @@ app.add_middleware(JWTValidationMiddleware)
 app.add_middleware(CorrelationIdMiddleware)
 
 setup_telemetry(app, settings.OTEL_EXPORTER_OTLP_ENDPOINT, settings.OTEL_SERVICE_NAME)
+for _handler in logging.root.handlers:
+    _handler.addFilter(CorrelationIdFilter(default_value="-"))
 
 
 @app.middleware("http")

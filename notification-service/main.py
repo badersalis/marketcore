@@ -14,9 +14,8 @@ from infrastructure.messaging.consumer import NotificationConsumer
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)-8s [%(correlation_id)s] %(name)s — %(message)s",
+    force=True,
 )
-for _handler in logging.root.handlers:
-    _handler.addFilter(CorrelationIdFilter(default_value="-"))
 
 
 
@@ -58,6 +57,8 @@ setup_telemetry(
     settings.OTEL_SERVICE_NAME,
     instrument_aio_pika=True,
 )
+for _handler in logging.root.handlers:
+    _handler.addFilter(CorrelationIdFilter(default_value="-"))
 
 
 @app.get("/health", tags=["Health"])

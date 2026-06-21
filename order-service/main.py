@@ -17,9 +17,8 @@ from presentation.routers.order_router import router as order_router
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)-8s [%(correlation_id)s] %(name)s — %(message)s",
+    force=True,
 )
-for _handler in logging.root.handlers:
-    _handler.addFilter(CorrelationIdFilter(default_value="-"))
 
 
 async def _payment_event_handler(event_type: str, body: dict) -> None:
@@ -125,6 +124,8 @@ setup_telemetry(
     instrument_sqlalchemy=True,
     instrument_aio_pika=True,
 )
+for _handler in logging.root.handlers:
+    _handler.addFilter(CorrelationIdFilter(default_value="-"))
 
 app.include_router(cart_router, prefix="/cart/items", tags=["Cart"])
 app.include_router(order_router, prefix="/orders", tags=["Orders"])
