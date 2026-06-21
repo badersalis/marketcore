@@ -16,9 +16,8 @@ from presentation.routers.sku_router import router as sku_router
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)-8s [%(correlation_id)s] %(name)s — %(message)s",
+    force=True,
 )
-for _handler in logging.root.handlers:
-    _handler.addFilter(CorrelationIdFilter(default_value="-"))
 
 
 
@@ -54,6 +53,8 @@ setup_telemetry(
     instrument_sqlalchemy=True,
     instrument_aio_pika=True,
 )
+for _handler in logging.root.handlers:
+    _handler.addFilter(CorrelationIdFilter(default_value="-"))
 
 app.include_router(category_router, prefix="/categories", tags=["Categories"])
 app.include_router(product_router, prefix="/products", tags=["Products"])
