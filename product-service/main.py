@@ -8,8 +8,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from core.config import settings
 from shared.telemetry import setup_telemetry
+from infrastructure.cache.product_cache import ProductCache
 from infrastructure.messaging.event_publisher import EventPublisher
-from infrastructure.persistence.database import Base, engine
+from infrastructure.messaging.product_event_consumer import ProductEventConsumer
+from infrastructure.persistence.database import AsyncSessionFactory, Base, engine
+from infrastructure.repositories.product_repository_impl import SQLAlchemyProductRepository
 from presentation.routers.category_router import router as category_router
 from presentation.routers.product_router import router as product_router
 from presentation.routers.sku_router import router as sku_router
@@ -22,6 +25,30 @@ logging.basicConfig(
 
 
 
+async def _product_event_handler(event_type: str, body: dict) -> None:
+    from application.use_cases.publish_product import PublishProduct
+    from application.use_cases.reject_product import RejectProduct
+
+    async with AsyncSessionFactory() as session:
+        repo = SQLAlchemyProductRepository(session)
+        publisher = app.state.event_publisher
+        cache = app.state.product_cache
+
+        if event_type == "product.images_ready":
+            await PublishProduct(repo, publisher, cache).execute(
+                product_id=body.get("product_id", ""),
+                cdn_urls=body.get("cdn_urls", []),
+            )
+            await session.commit()
+
+        elif event_type == "product.images_failed":
+            await RejectProduct(repo).execute(
+                product_id=body.get("product_id", ""),
+                reason=body.get("reason", ""),
+            )
+            await session.commit()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
@@ -31,8 +58,18 @@ async def lifespan(app: FastAPI):
     await publisher.connect()
     app.state.event_publisher = publisher
 
+    cache = ProductCache(settings.REDIS_URL)
+    await cache.connect()
+    app.state.product_cache = cache
+
+    consumer = ProductEventConsumer(settings.RABBITMQ_URL, handler=_product_event_handler)
+    await consumer.start()
+    app.state.product_consumer = consumer
+
     yield
 
+    await consumer.stop()
+    await cache.close()
     await publisher.disconnect()
     await engine.dispose()
 
