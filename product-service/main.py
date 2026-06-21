@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from core.config import settings
 from shared.telemetry import setup_telemetry
+from infrastructure.messaging.event_publisher import EventPublisher
 from infrastructure.persistence.database import Base, engine
 from presentation.routers.category_router import router as category_router
 from presentation.routers.product_router import router as product_router
@@ -25,7 +26,14 @@ logging.basicConfig(
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+    publisher = EventPublisher(settings.RABBITMQ_URL)
+    await publisher.connect()
+    app.state.event_publisher = publisher
+
     yield
+
+    await publisher.disconnect()
     await engine.dispose()
 
 

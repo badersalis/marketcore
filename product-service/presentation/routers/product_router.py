@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from application.dtos.product_dtos import (
@@ -25,13 +25,18 @@ router = APIRouter()
 
 @router.post("/", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
 async def create_product(
-    request: CreateProductRequest,
+    body: CreateProductRequest,
+    http_request: Request,
     db: AsyncSession = Depends(get_db),
+    x_user_id: Optional[str] = Header(None),
 ):
     product_repo = SQLAlchemyProductRepository(db)
     category_repo = SQLAlchemyCategoryRepository(db)
+    publisher = getattr(http_request.app.state, "event_publisher", None)
     try:
-        return await CreateProduct(product_repo, category_repo).execute(request)
+        return await CreateProduct(product_repo, category_repo, publisher).execute(
+            body, merchant_id=x_user_id or ""
+        )
     except CategoryNotFoundException as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=exc.message)
 
