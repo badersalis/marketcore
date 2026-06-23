@@ -8,19 +8,17 @@ from asgi_correlation_id import CorrelationIdFilter, CorrelationIdMiddleware
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
-from prometheus_fastapi_instrumentator import Instrumentator
-
 from core.config import settings
 from middleware.jwt_validator import JWTValidationMiddleware
 from middleware.rate_limiter import RateLimitMiddleware
 from proxy import reverse_proxy
+from shared.telemetry import setup_telemetry
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)-8s [%(correlation_id)s] %(name)s — %(message)s",
+    force=True,
 )
-for _handler in logging.root.handlers:
-    _handler.addFilter(CorrelationIdFilter(default_value="-"))
 
 
 @asynccontextmanager
@@ -52,7 +50,9 @@ app.add_middleware(
 app.add_middleware(JWTValidationMiddleware)
 app.add_middleware(CorrelationIdMiddleware)
 
-Instrumentator().instrument(app).expose(app, include_in_schema=False)
+setup_telemetry(app, settings.OTEL_EXPORTER_OTLP_ENDPOINT, settings.OTEL_SERVICE_NAME)
+for _handler in logging.root.handlers:
+    _handler.addFilter(CorrelationIdFilter(default_value="-"))
 
 
 @app.middleware("http")
@@ -95,15 +95,6 @@ async def health():
     return {"status": overall, "services": services}
 
 
-@app.api_route(
-    "/{full_path:path}",
-    methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],
-    include_in_schema=False,
-)
-async def catch_all(request: Request):
-    return await reverse_proxy(request)
-
-
 @app.get("/docs", include_in_schema=False, response_class=HTMLResponse)
 async def scalar_docs():
     return HTMLResponse(
@@ -124,3 +115,12 @@ async def scalar_docs():
   </body>
 </html>"""
     )
+
+
+@app.api_route(
+    "/{full_path:path}",
+    methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],
+    include_in_schema=False,
+)
+async def catch_all(request: Request):
+    return await reverse_proxy(request)

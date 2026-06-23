@@ -16,8 +16,11 @@ _HANDLED_EVENTS = {
     "user.registered",
     "user.verified",
     "user.verification_email_requested",
+    "user.merchant_upgrade_requested",
+    "user.merchant_approved",
     "payment.confirmed",
     "payment.failed",
+    "product.published",
 }
 
 
@@ -34,6 +37,7 @@ class NotificationConsumer:
 
         await self._bind_exchange(channel, "user.events", "notification.user.events")
         await self._bind_exchange(channel, "payment.events", "notification.payment.events")
+        await self._bind_exchange(channel, "product.events", "notification.product.events")
 
         logger.info("NotificationConsumer started — listening for events")
 
@@ -99,6 +103,19 @@ class NotificationConsumer:
                 return
             await self._arq.enqueue_job("send_welcome_email_job", to=email, **kw)
 
+        elif event_type == "user.merchant_upgrade_requested":
+            logger.info(
+                "MerchantUpgradeRequested for user=%s request=%s — operator notification not yet wired",
+                body.get("user_id"), body.get("request_id"),
+            )
+
+        elif event_type == "user.merchant_approved":
+            email = body.get("email", "")
+            if not email:
+                logger.warning("Missing email in user.merchant_approved — skipping")
+                return
+            await self._arq.enqueue_job("send_merchant_approved_email_job", to=email, **kw)
+
         elif event_type == "payment.confirmed":
             logger.info(
                 "PaymentConfirmed for payment=%s order=%s — user email lookup not yet wired",
@@ -109,6 +126,24 @@ class NotificationConsumer:
             logger.info(
                 "PaymentFailed for payment=%s order=%s — user email lookup not yet wired",
                 body.get("payment_id"), body.get("order_id"),
+            )
+
+        elif event_type == "product.published":
+            merchant_email = body.get("merchant_email", "")
+            product_id = body.get("product_id", "")
+            product_name = body.get("name", "")
+            if not merchant_email or not product_id:
+                logger.warning(
+                    "product.published missing merchant_email or product_id — skipping "
+                    "(merchant_email lookup from user-service not yet wired)"
+                )
+                return
+            await self._arq.enqueue_job(
+                "send_product_published_email_job",
+                to=merchant_email,
+                product_id=product_id,
+                product_name=product_name,
+                **kw,
             )
 
 

@@ -1,4 +1,5 @@
 import logging
+import os
 from contextlib import asynccontextmanager
 
 from arq import create_pool
@@ -6,17 +7,16 @@ from arq.connections import RedisSettings
 from asgi_correlation_id import CorrelationIdFilter, CorrelationIdMiddleware
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
-from prometheus_fastapi_instrumentator import Instrumentator
-
 from core.config import ARQ_QUEUE_NAME, settings
+from shared.telemetry import setup_telemetry
 from infrastructure.messaging.consumer import NotificationConsumer
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)-8s [%(correlation_id)s] %(name)s — %(message)s",
+    force=True,
 )
-for _handler in logging.root.handlers:
-    _handler.addFilter(CorrelationIdFilter(default_value="-"))
+
 
 
 @asynccontextmanager
@@ -51,7 +51,14 @@ app = FastAPI(
 
 app.add_middleware(CorrelationIdMiddleware)
 
-Instrumentator().instrument(app).expose(app, include_in_schema=False)
+setup_telemetry(
+    app,
+    settings.OTEL_EXPORTER_OTLP_ENDPOINT,
+    settings.OTEL_SERVICE_NAME,
+    instrument_aio_pika=True,
+)
+for _handler in logging.root.handlers:
+    _handler.addFilter(CorrelationIdFilter(default_value="-"))
 
 
 @app.get("/health", tags=["Health"])

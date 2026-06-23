@@ -7,6 +7,7 @@ from domain.entities.user import User
 from domain.repositories.user_repository import UserRepository
 from domain.value_objects.email import Email
 from domain.value_objects.hashed_password import HashedPassword
+from domain.value_objects.role import UserRole
 from infrastructure.persistence.models import UserModel
 
 
@@ -21,6 +22,8 @@ class SQLAlchemyUserRepository(UserRepository):
             hashed_password=HashedPassword(model.hashed_password),
             is_active=model.is_active,
             is_verified=model.is_verified,
+            role=UserRole(model.role) if isinstance(model.role, str) else model.role,
+            is_merchant_approved=model.is_merchant_approved,
             created_at=model.created_at,
         )
 
@@ -45,6 +48,8 @@ class SQLAlchemyUserRepository(UserRepository):
             hashed_password=user.hashed_password.value,
             is_active=user.is_active,
             is_verified=user.is_verified,
+            role=user.role,
+            is_merchant_approved=user.is_merchant_approved,
             created_at=user.created_at,
         )
         self._session.add(model)
@@ -60,6 +65,8 @@ class SQLAlchemyUserRepository(UserRepository):
         model.hashed_password = user.hashed_password.value
         model.is_active = user.is_active
         model.is_verified = user.is_verified
+        model.role = user.role
+        model.is_merchant_approved = user.is_merchant_approved
         await self._session.flush()
         return user
 

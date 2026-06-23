@@ -24,6 +24,7 @@ class CreateProductRequest(BaseModel):
     currency: str = "USD"
     stock: int = 0
     category_id: Optional[str] = None
+    image_urls: List[str] = []
 
     @field_validator("price")
     @classmethod
@@ -95,6 +96,8 @@ class ProductResponse(BaseModel):
     stock: int
     category_id: Optional[str]
     is_active: bool
+    status: str
+    image_urls: List[str] = []
     created_at: datetime
     skus: List[SkuResponse] = []
 

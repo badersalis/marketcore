@@ -1,19 +1,23 @@
 import logging
+import os
 from contextlib import asynccontextmanager
 
+from asgi_correlation_id import CorrelationIdFilter, CorrelationIdMiddleware
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
-
 from core.config import settings
+from shared.telemetry import setup_telemetry
 from infrastructure.messaging.event_publisher import EventPublisher
 from infrastructure.persistence.database import Base, engine
 from presentation.routers.payment_router import router as payment_router
 
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s %(levelname)-8s %(name)s — %(message)s",
+    format="%(asctime)s %(levelname)-8s [%(correlation_id)s] %(name)s — %(message)s",
+    force=True,
 )
+
 
 
 @asynccontextmanager
@@ -50,6 +54,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(CorrelationIdMiddleware)
+
+setup_telemetry(
+    app,
+    settings.OTEL_EXPORTER_OTLP_ENDPOINT,
+    settings.OTEL_SERVICE_NAME,
+    instrument_sqlalchemy=True,
+    instrument_aio_pika=True,
+)
+for _handler in logging.root.handlers:
+    _handler.addFilter(CorrelationIdFilter(default_value="-"))
 
 app.include_router(payment_router, prefix="/payments", tags=["Payments"])
 

@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 import httpx
 
@@ -11,9 +10,7 @@ _RESEND_API = "https://api.resend.com/emails"
 
 
 class ResendEmailSender:
-    """
-    Sends transactional email via the Resend REST API using httpx.
-    No extra SDK dependency — httpx is already required.
+    """Sends transactional email via the Resend REST API.
 
     If RESEND_API_KEY is not configured the send is skipped and a warning
     is logged, so local development works without a real account.
@@ -39,15 +36,19 @@ class ResendEmailSender:
                     json=payload,
                 )
                 response.raise_for_status()
-                logger.info("Email sent to %s | subject: %s | id: %s",
-                            to, subject, response.json().get("id"))
+                logger.info(
+                    "Email sent to %s | subject: %s | id: %s",
+                    to, subject, response.json().get("id"),
+                )
             except httpx.HTTPStatusError as exc:
                 logger.error(
                     "Resend API error %s for %s: %s",
                     exc.response.status_code, to, exc.response.text,
                 )
+                raise
             except httpx.RequestError as exc:
                 logger.error("Resend request failed for %s: %s", to, exc)
+                raise
 
 
 __all__ = ["ResendEmailSender"]

@@ -6,14 +6,8 @@ from asgi_correlation_id import CorrelationIdFilter, CorrelationIdMiddleware
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
-from opentelemetry import trace
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
-
 from core.config import settings
+from shared.telemetry import setup_telemetry
 from infrastructure.clients.persona_client import PersonaClient
 from infrastructure.messaging.event_publisher import EventPublisher
 from infrastructure.messaging.kyc_consumer import KYCWebhookConsumer
@@ -24,26 +18,9 @@ from presentation.routers.profile_router import router as profile_router
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)-8s [%(correlation_id)s] %(name)s — %(message)s",
+    force=True,
 )
-for _handler in logging.root.handlers:
-    _handler.addFilter(CorrelationIdFilter(default_value="-"))
 
-
-def setup_telemetry(app: FastAPI, service_name: str) -> None:
-    provider = TracerProvider()
-    provider.add_span_processor(
-        BatchSpanProcessor(
-            OTLPSpanExporter(
-                endpoint=os.getenv(
-                    "OTEL_EXPORTER_OTLP_ENDPOINT",
-                    "http://hyperdx:4318/v1/traces",
-                )
-            )
-        )
-    )
-    trace.set_tracer_provider(provider)
-    FastAPIInstrumentor.instrument_app(app, server_request_hook=None)
-    SQLAlchemyInstrumentor().instrument()
 
 
 @asynccontextmanager
@@ -94,8 +71,6 @@ app = FastAPI(
     redoc_url=None,
 )
 
-setup_telemetry(app, os.getenv("OTEL_SERVICE_NAME", "user-service"))
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -103,6 +78,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.add_middleware(CorrelationIdMiddleware)
+
+setup_telemetry(
+    app,
+    settings.OTEL_EXPORTER_OTLP_ENDPOINT,
+    settings.OTEL_SERVICE_NAME,
+    instrument_sqlalchemy=True,
+)
+for _handler in logging.root.handlers:
+    _handler.addFilter(CorrelationIdFilter(default_value="-"))
 
 app.include_router(profile_router, prefix="/profile", tags=["Profile"])
 app.include_router(kyc_router, prefix="/kyc", tags=["KYC"])

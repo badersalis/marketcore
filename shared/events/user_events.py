@@ -56,6 +56,7 @@ class UserVerified(DomainEvent):
 
 @dataclass
 class MerchantUpgradeRequested(DomainEvent):
+    """Published when a member requests upgrade to merchant role."""
     user_id: str = ""
     email: str = ""
     request_id: str = ""
@@ -73,6 +74,7 @@ class MerchantUpgradeRequested(DomainEvent):
 
 @dataclass
 class MerchantApproved(DomainEvent):
+    """Published when an operator approves a merchant upgrade request."""
     user_id: str = ""
     email: str = ""
     event_type: str = field(default="user.merchant_approved")

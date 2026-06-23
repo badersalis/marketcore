@@ -12,8 +12,10 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     RATE_LIMIT_PUBLIC: int = 100      # req/min per IP for public routes
     RATE_LIMIT_AUTHED: int = 300      # req/min per user for authenticated routes
+    OTEL_SERVICE_NAME: str = "api-gateway"
+    OTEL_EXPORTER_OTLP_ENDPOINT: str = "http://localhost:4318/v1/traces"
 
-    model_config = {"env_file": ".env"}
+    model_config = {"env_file": ".env", "extra": "ignore"}
 
 
 settings = Settings()
@@ -32,6 +34,9 @@ PUBLIC_ROUTES = {
     ("POST", "/auth/login"),
     ("POST", "/auth/refresh"),
     ("GET", "/health"),
+    ("GET", "/docs"),
+    ("GET", "/openapi.json"),
+    ("GET", "/favicon.ico"),
 }
 
 

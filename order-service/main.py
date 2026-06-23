@@ -5,9 +5,8 @@ from asgi_correlation_id import CorrelationIdFilter, CorrelationIdMiddleware
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
-from prometheus_fastapi_instrumentator import Instrumentator
-
 from core.config import settings
+from shared.telemetry import setup_telemetry
 from infrastructure.cache.redis_client import create_redis_client
 from infrastructure.messaging.event_publisher import EventPublisher
 from infrastructure.messaging.payment_consumer import PaymentEventConsumer
@@ -18,9 +17,8 @@ from presentation.routers.order_router import router as order_router
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)-8s [%(correlation_id)s] %(name)s — %(message)s",
+    force=True,
 )
-for _handler in logging.root.handlers:
-    _handler.addFilter(CorrelationIdFilter(default_value="-"))
 
 
 async def _payment_event_handler(event_type: str, body: dict) -> None:
@@ -119,7 +117,15 @@ app.add_middleware(
 )
 app.add_middleware(CorrelationIdMiddleware)
 
-Instrumentator().instrument(app).expose(app, include_in_schema=False)
+setup_telemetry(
+    app,
+    settings.OTEL_EXPORTER_OTLP_ENDPOINT,
+    settings.OTEL_SERVICE_NAME,
+    instrument_sqlalchemy=True,
+    instrument_aio_pika=True,
+)
+for _handler in logging.root.handlers:
+    _handler.addFilter(CorrelationIdFilter(default_value="-"))
 
 app.include_router(cart_router, prefix="/cart/items", tags=["Cart"])
 app.include_router(order_router, prefix="/orders", tags=["Orders"])
